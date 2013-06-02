@@ -484,6 +484,24 @@ static struct root_domain def_root_domain;
 
 #endif
 
+#ifdef CONFIG_SCHED_CASIO_POLICY
+struct casio_task_release{
+	struct hrtimer timer;
+	struct rb_root tasks;
+	struct task_struct *erf;
+};
+
+struct casio_task_ready{
+	struct rb_root tasks;
+	struct task_struct *edf;
+};
+
+struct casio_rq{
+	struct casio_task_ready ready;
+	struct casio_task_release release;
+};
+#endif
+
 /*
  * This is the main, per-CPU runqueue data structure.
  *
@@ -593,6 +611,10 @@ struct rq {
 
 	/* BKL stats */
 	unsigned int bkl_count;
+#endif
+
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	struct casio_rq casio_rq;
 #endif
 };
 
