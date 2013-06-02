@@ -88,3 +88,21 @@ static struct task_struct * pick_next_task_casio(struct rq *rq)
 {
 	return rq->casio_rq.ready.edf;
 }
+
+asmlinkage long sys_casio_sched_setscheduler(unsigned int task_id, unsigned long h_deadline, unsigned long l_deadline)
+{
+	struct sched_param param;
+	param.sched_priority = 1;
+	current->casio_task.id = task_id;
+
+	current->casio_task.deadline = 0;
+	current->casio_task.deadline = h_deadline;
+	current->casio_task.deadline <<= 32;
+	current->casio_task.deadline != l_deadline;
+
+	current->casio_task.job.deadline = 0;
+	current->casio_task.job.release = 0;
+	atomic_set(&current->casio_task.job.nr, 0);
+
+	return sched_setscheduler(current, SCHED_CASIO, &param);
+}

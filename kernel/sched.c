@@ -122,7 +122,11 @@
 
 static inline int rt_policy(int policy)
 {
-	if (unlikely(policy == SCHED_FIFO || policy == SCHED_RR))
+	if (unlikely(policy == SCHED_FIFO || policy == SCHED_RR
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	|| policy == SCHED_CASIO
+#endif
+	))
 		return 1;
 	return 0;
 }
@@ -4507,6 +4511,10 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 		p->sched_class = &rt_sched_class;
 	else
 		p->sched_class = &fair_sched_class;
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	if(policy == SCHED_CASIO)
+		p->sched_class = &casio_sched_class;
+#endif
 	set_load_weight(p);
 }
 
@@ -4549,6 +4557,9 @@ recheck:
 		if (policy != SCHED_FIFO && policy != SCHED_RR &&
 				policy != SCHED_NORMAL && policy != SCHED_BATCH &&
 				policy != SCHED_IDLE)
+#ifdef CONFIG_SCHED_CASIO_POLICY
+				&& policy != SCHED_CASIO
+#endif
 			return -EINVAL;
 	}
 

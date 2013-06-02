@@ -732,6 +732,10 @@ static int hrtimer_switch_to_hres(void)
 
 	tick_setup_sched_timer();
 
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	casio_setup_release_timer();
+#endif
+
 	/* "Retrigger" the interrupt to get things going */
 	retrigger_next_event(NULL);
 	local_irq_restore(flags);
