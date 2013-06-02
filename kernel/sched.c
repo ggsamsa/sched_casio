@@ -618,6 +618,14 @@ struct rq {
 #endif
 };
 
+#ifdef CONFIG_SCHED_CASIO_POLICY
+static const struct sched_class casio_sched_class;
+#define sched_class_highest (&casio_sched_class)
+#else
+static const struct sched_class rt_sched_class;
+#define sched_class_highest (&rt_sched_class)
+#endif
+
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 static inline
@@ -1957,7 +1965,9 @@ static void deactivate_task(struct rq *rq, struct task_struct *p, int sleep)
 #ifdef CONFIG_SCHED_DEBUG
 # include "sched_debug.c"
 #endif
-
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	#include "sched_casio.c"
+#endif
 /*
  * __normal_prio - return the priority that is based on the static prio
  */
@@ -7774,6 +7784,9 @@ void __init sched_init(void)
 		rq->calc_load_update = jiffies + LOAD_FREQ;
 		init_cfs_rq(&rq->cfs, rq);
 		init_rt_rq(&rq->rt, rq);
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	init_casio_rq(&rq->casio_rq);
+#endif
 #ifdef CONFIG_FAIR_GROUP_SCHED
 		init_task_group.shares = init_task_group_load;
 		INIT_LIST_HEAD(&rq->leaf_cfs_rq_list);
