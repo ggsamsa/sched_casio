@@ -16,6 +16,9 @@
 
 #include <asm/uaccess.h>
 #include <asm/io.h>
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	#include <linux/sched_casio.h>
+#endif
 
 extern wait_queue_head_t log_wait;
 
@@ -55,8 +58,67 @@ static const struct file_operations proc_kmsg_operations = {
 	.release	= kmsg_release,
 };
 
+#ifdef CONFIG_SCHED_CASIO_POLICY
+static int casio_trace_open(struct inode *inode, struct file *filp)
+{
+	filp->private_data = get_casio_trace_log();
+	if(!filp->private_data) return -1;
+	return 0;
+}
+
+static ssize_t casio_trace_read(struct file *filp, char __user *buf, size_t nbytes, loff_t *ppos)
+{
+		int ret = 0;
+		unsigned long len = 0;
+		unsigned int nitems = 0, front = 0;
+		char buffer[100];
+		struct casio_trace_event_log *log = (struct casio_trace_event_log*)filp->private_data;
+		buffer[0] = 0;
+		nitems = atomic_read(&log->nitems);
+		if(nitems > 0)
+		{
+				front = atomic_read(&log->front);
+				len = snprintf(buffer, nbytes, "%d, %llu, %d, %llu, %d, %d\n",
+				log->casio_trace_event[front].event, log->casio_trace_event[front].time, 
+				log->casio_trace_event[front].casio_id, log->casio_trace_event[front].job_nr,
+				log->casio_trace_event[front].deadline, log->casio_trace_event[front].pid,
+				log->casio_trace_event[front].state);
+				if(len > nbytes)
+				{
+					printk(KERN_INFO "SCHED_CASIO:error:nbytes:%d:len:%ld", nbytes, len);
+					return -EINVAL;
+				}
+				if(len)
+				{
+					if((ret=copy_to_user(buf, buffer, len)))
+					{
+							printk(KERN_INFO "SCHED_CASIO:error:copy_to_user:%ld:%d:%s", len, ret, buffer);
+							return -EFAULT;
+					}
+				}
+				front = (front + 1 >= CASIO_TRACE_EVENT_SIZE)?0:front+1;
+				atomic_set(&log->front, front); atomic_dec(&log->nitems);
+				return (ssize_t)len;
+		}
+		return 0;
+}
+static int casio_trace_release(struct inode *inode, struct file *filp)
+{
+	filp->private_data = NULL;
+	return 0;	
+}
+
+static const struct file_operations proc_casio_trace_operations = {
+	.open = casio_trace_open,
+	.read = casio_trace_read,
+	.release = casio_trace_release
+};
+#endif
 static int __init proc_kmsg_init(void)
 {
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	proc_create("casio_trace", 0444, NULL, &proc_casio_trace_operations);
+#endif
 	proc_create("kmsg", S_IRUSR, NULL, &proc_kmsg_operations);
 	return 0;
 }

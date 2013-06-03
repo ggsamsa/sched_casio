@@ -23,6 +23,7 @@ static void enqueue_task_casio(struct rq *rq, struct task_struct *p, int wakeup)
 	unsigned long long now = casio_clock();
 	p->casio_task.job.deadline = now + p-> casio_task.deadline;
 	_enqueue_task_casio(rq, p);
+	casio_trace(ENQUEUE, now, p);
 }
 
 /*
@@ -61,6 +62,7 @@ void _enqueue_task_casio(struct rq *rq, struct task_struct *p)
 static void dequeue_task_casio(struct rq *rq, struct task_struct *p, int sleep)
 {
 	_dequeue_task_casio(rq, p);
+	casio_trace(DEQUEUE, casio_clock(), p);
 }
 
 /*dequeue a task from the ready queue (a binary tree)
