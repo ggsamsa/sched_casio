@@ -42,3 +42,11 @@ void casio_trace(enum casio_event event, unsigned long long time, struct task_st
 		}
 	}
 }
+asmlinkage long sys_casio_trace_init()
+{
+	struct casio_Trace_event_log *log = get_casio_trace_log(
+	atomic_set(&log->front, 0);
+	atomic_set(&log->rear, 0);
+	atomic_set(&log->nitems, 0);
+	return 0;
+}
