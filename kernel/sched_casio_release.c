@@ -124,3 +124,67 @@ asmlinkage long sys_casio_delay_until(unsigned long h, unsigned long l)
 	}
 	return -1;
 }
+
+/*
+this callback is executed at release timer expiration
+*/
+static enum hrtimer_restart wake_up_job(struct hrtimer *timer)
+{
+	struct rq * rq = NULL;
+	struct task_struct *p = NULL;
+	unsigned long flags;
+	unsigned char wake_up = 0;
+	//it disables local interrupts and also preemptions, thus, this code is executed without any interruption
+	local_irq_save(flags);
+	preempt_disable();
+	//it gets the processor's runqueue
+	rq = cpu_rq(smp_processor_id());
+	re_wake_up;
+	do
+	{
+		wake_up = 0;
+		//it gets the earliest release job
+		p = rq->casio_rq.release.erf;
+		if(p)
+		{
+			//if the job release falls in within the interval composed by the current time (given by casio_clock() function) plus a safe interval (EPSILON)
+			if(p->casio_task.job.release < casio_clock() + EPSILON)
+			{
+				//removes job from the release queue
+				_dequeue_task_release(rq);
+				//this is only for safe reasons
+				(if(p->exit_state != EXIT_DEAD && p->exit_state != EXIT_ZOMBIE)
+				{
+					wake_up = 1;
+					//it increments the number of the job
+					atomic_inc(&p->casio_task.job.nr);
+					//it changes the task state to running
+					p->state = TASK_RUNNING;
+					smp_wmb;
+					task_thread_info(p)->cpu = rq->cpu;
+					//enqueue job into ready queue
+					enqueue_task(rq, p, 0, false);
+				}
+			}
+		}
+	}while(wake_up);
+	//sets up the new expiration of the timer
+	p=rq-<casio_rq.release.erf;
+	if(p)
+	{
+		if(unlikely(p->casio_task.job.release <= casio_clock() + EPSILON))
+			goto re_wake_up;
+		hrtimer_set_expires(timer, ns_to_ktime(p-<casio_task.job.release));
+	}
+	else
+	{
+		//if there is no task into the release queue, the expiration of the timer is set to a time instant far away that it actually will not expire.
+		hrtimer_set_expires(timer, ktime_set(KTIME_SEC_MAX, 0));
+	}
+	//it marks the current executing task to be preempted
+	set_tsk_need_resched(rq->curr);
+	local_irq_restore(flags);
+	preempt_enable_no_resched();
+	//restart the timer
+	return HRTIMER_RESTART;
+}
