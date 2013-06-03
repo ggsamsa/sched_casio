@@ -337,3 +337,11 @@ ENTRY(sys_call_table)
 	.long sys_rt_tgsigqueueinfo	/* 335 */
 	.long sys_perf_event_open
 	.long sys_recvmmsg
+
+/* CASIO system calls */
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	.long sys_casio_sched_setscheduler /*338*/
+	.long sys_casio_delay_until /*339*/
+	.long sys_casio_trace_init /*340*/
+	.long sys_casio_clock /*341*/
+#endif

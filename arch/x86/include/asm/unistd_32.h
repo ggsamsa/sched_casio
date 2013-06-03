@@ -343,10 +343,21 @@
 #define __NR_rt_tgsigqueueinfo	335
 #define __NR_perf_event_open	336
 #define __NR_recvmmsg		337
+#ifdef CONFIG_SCHED_CASIO_POLICY
+#define __NR_casio_sched_setscheduler	338
+#define __NR_casio_delay_until	339
+#define __NR_casio_trace_init	340
+#define __NR_casio_clock 341
+#endif
+
 
 #ifdef __KERNEL__
 
-#define NR_syscalls 338
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	#define NR_syscalls 341
+#else
+	#define NR_syscalls 338
+#endif
 
 #define __ARCH_WANT_IPC_PARSE_VERSION
 #define __ARCH_WANT_OLD_READDIR

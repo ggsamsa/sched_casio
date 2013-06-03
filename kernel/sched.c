@@ -3774,6 +3774,15 @@ need_resched_nonpreemptible:
 	put_prev_task(rq, prev);
 	next = pick_next_task(rq);
 
+#ifdef CONFIG_SCHED_CASIO_POLICY
+	if(prev->policy == SCHED_CASIO || next->policy == SCHED_CASIO)
+	{
+		now = casio_clock();
+		casio_trace(SWITCH_AWAY, now, prev);
+		casio_trace(SWITCH_TO, now, next);		
+	}
+#endif
+
 	if (likely(prev != next)) {
 		sched_info_switch(prev, next);
 		perf_event_task_sched_out(prev, next);
