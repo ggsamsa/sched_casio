@@ -108,3 +108,11 @@ asmlinkage long sys_casio_sched_setscheduler(unsigned int task_id, unsigned long
 
 	return sched_setscheduler(current, SCHED_CASIO, &param);
 }
+
+asmlinkage long sys_casio_clock(char __user *t)
+{
+	unsigned long now = casio_clock();
+	if(copy_to_user(t, &now, sizeof(unsigned long long)))
+		return -EFAULT;
+	return 0;
+}
